@@ -15,6 +15,7 @@ add_compile_options(-freflection)
 set(EXAMPLES
     universal_formatter
     enum_tostring
+    invoke_functions_of_namespace
 )
 
 foreach(example IN LISTS EXAMPLES)
