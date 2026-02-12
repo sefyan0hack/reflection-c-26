@@ -27,11 +27,11 @@ jobs:
 
       - name: Run 
         shell: bash
-        run: ctest --test-dir build > output.txt
+        run: ctest --test-dir build -V > output.txt
 
       - name: Print output
         shell: bash
         run: |
-          printf "\n\`\`\`\n" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
           cat output.txt >> "$GITHUB_STEP_SUMMARY"
-          printf "\n\`\`\`\n" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
