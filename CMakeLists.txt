@@ -21,8 +21,22 @@ foreach(example IN LISTS EXAMPLES)
     add_executable(${example} ${example}.cpp)
 endforeach()
 
-enable_testing()
+set(RUN_COMMANDS)
+set(RUN_DEPENDS)
 
 foreach(example IN LISTS EXAMPLES)
-    add_test(NAME ${example} COMMAND $<TARGET_FILE:${example}>)
+    list(APPEND RUN_COMMANDS
+        COMMAND ${CMAKE_COMMAND} -E echo "+++++++++++++++++++[${example}]+++++++++++++++++++"
+        COMMAND $<TARGET_FILE:${example}>
+        COMMAND ${CMAKE_COMMAND} -E echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+    )
+
+    list(APPEND RUN_DEPENDS ${example})
 endforeach()
+
+add_custom_target(run
+    ${RUN_COMMANDS}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    DEPENDS ${RUN_DEPENDS}
+    COMMENT "Running all reflection examples in sequence"
+)
