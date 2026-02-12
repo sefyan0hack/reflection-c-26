@@ -27,4 +27,4 @@ jobs:
 
       - name: Run 
         shell: bash
-        run: cmake --build . --target run
+        run: cmake --build build --target run
