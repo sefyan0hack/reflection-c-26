@@ -29,7 +29,6 @@ template <typename T> // <- add template hire to cover the wanted range of types
 struct std::formatter<T> {
   constexpr auto parse(auto& ctx) { return ctx.begin(); }
 
-  template <typename T>
   auto format(T const& t, auto& ctx) const {
     auto out = std::format_to(ctx.out(), 
     "{}{{", has_identifier(^^T) ? identifier_of(^^T) : "(unnamed-type)");
