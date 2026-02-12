@@ -28,7 +28,6 @@ foreach(example IN LISTS EXAMPLES)
     list(APPEND RUN_COMMANDS
         COMMAND ${CMAKE_COMMAND} -E echo "+++++++++++++++++++[${example}]+++++++++++++++++++"
         COMMAND $<TARGET_FILE:${example}>
-        COMMAND ${CMAKE_COMMAND} -E echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     )
 
     list(APPEND RUN_DEPENDS ${example})
