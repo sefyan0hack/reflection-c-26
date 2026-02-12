@@ -16,8 +16,9 @@ add_compile_options(-freflection)
 add_executable(universal_formatter universal_formatter.cpp)
 
 add_custom_target(run
-    COMMAND ${CMAKE_COMMAND} -E echo "-------------[universal_formatter]-------------"
+    COMMAND ${CMAKE_COMMAND} -E echo "+++++++++++++++++++[universal_formatter]+++++++++++++++++++"
     COMMAND $<TARGET_FILE:universal_formatter>
+    COMMAND ${CMAKE_COMMAND} -E echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
     DEPENDS universal_formatter
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )

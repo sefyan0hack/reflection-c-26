@@ -27,4 +27,11 @@ jobs:
 
       - name: Run 
         shell: bash
-        run: cmake --build build --target run
+        run: cmake --build build --target run > output.txt
+
+      - name: Print output
+        shell: bash
+        run: |
+          printf "\n\`\`\`\n" >> "$GITHUB_STEP_SUMMARY"
+          cat output.txt >> "$GITHUB_STEP_SUMMARY"
+          printf "\n\`\`\`\n" >> "$GITHUB_STEP_SUMMARY"
