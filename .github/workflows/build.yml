@@ -27,7 +27,7 @@ jobs:
 
       - name: Run 
         shell: bash
-        run: cmake --build build --target run > output.txt
+        run: ctest --test-dir build > output.txt
 
       - name: Print output
         shell: bash

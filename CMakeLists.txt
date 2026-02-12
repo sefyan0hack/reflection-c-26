@@ -21,15 +21,8 @@ foreach(example IN LISTS EXAMPLES)
     add_executable(${example} ${example}.cpp)
 endforeach()
 
-set(RUN_COMMANDS)
-foreach(example IN LISTS EXAMPLES)
-    list(APPEND RUN_COMMANDS COMMAND ${CMAKE_COMMAND} -E echo "\t${example}\t\n")
-    list(APPEND RUN_COMMANDS COMMAND $<TARGET_FILE:${example}>)
-    list(APPEND RUN_COMMANDS COMMAND ${CMAKE_COMMAND} -E echo "\t----------\t\n")
-endforeach()
+enable_testing()
 
-add_custom_target(run
-    ${RUN_COMMANDS}
-    DEPENDS ${EXAMPLES}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
+foreach(example IN LISTS EXAMPLES)
+    add_test(NAME ${example} COMMAND $<TARGET_FILE:${example}>)
+endforeach()
