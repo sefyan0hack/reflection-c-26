@@ -2,7 +2,6 @@
 #include <print>
 #include <cstdint>
 #include <meta>
-#include <ranges>
 #include <vector>
 
 using namespace std::meta;
