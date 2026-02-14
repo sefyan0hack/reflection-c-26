@@ -12,7 +12,7 @@ void invoke_all() {
     }
 }
 
-namespace test {
+namespace tests {
     void test_foo() {
         std::println("Called foo");
     }
@@ -23,5 +23,5 @@ namespace test {
 }
 
 int main() {
-    invoke_all<^^test>();
+    invoke_all<^^tests>();
 }
