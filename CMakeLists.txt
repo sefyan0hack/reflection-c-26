@@ -16,6 +16,7 @@ set(EXAMPLES
     universal_formatter
     enum_tostring
     invoke_functions_of_namespace
+    unit_tests
 )
 
 foreach(example IN LISTS EXAMPLES)
