@@ -10,17 +10,16 @@ set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_compile_options(-freflection)
-
 set(EXAMPLES
     universal_formatter
     enum_tostring
-    invoke_functions_of_namespace
     unit_tests
 )
 
 foreach(example IN LISTS EXAMPLES)
     add_executable(${example} ${example}.cpp)
+    target_link_libraries(${example} PRIVATE stdc++exp)
+    target_compile_options(${example} PRIVATE -freflection)
 endforeach()
 
 set(RUN_COMMANDS)
@@ -29,7 +28,9 @@ set(RUN_DEPENDS)
 foreach(example IN LISTS EXAMPLES)
     list(APPEND RUN_COMMANDS
         COMMAND ${CMAKE_COMMAND} -E echo "+++++++++++++++++++[${example}]+++++++++++++++++++"
+        COMMAND ${CMAKE_COMMAND} -E echo
         COMMAND $<TARGET_FILE:${example}>
+        COMMAND ${CMAKE_COMMAND} -E echo
     )
 
     list(APPEND RUN_DEPENDS ${example})

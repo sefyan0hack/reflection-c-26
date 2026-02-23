@@ -1,16 +1,39 @@
 // g++ -std=c++26 -freflection
 #include <print>
 #include <meta>
-#include <ranges>
-#include <cassert>
+#include <cstring>
 
 using namespace std::meta;
 
-inline constexpr struct{} test {};
 inline constexpr struct{} ignore {};
-consteval auto has_annotation(info T, info anno){
-    return !annotations_of_with_type(T, anno).empty();
+
+consteval auto has_annotation(info T, auto anno){
+    return !annotations_of_with_type(T, ^^decltype(anno)).empty();
 }
+
+template<info NS>
+auto run_tests(){
+    template for (auto i = 1uz; constexpr info M : define_static_array(members_of(NS, access_context::current()))){
+        if constexpr (is_function(M)) {
+            std::println("#{} {} :: {} {}",
+                i++,
+                identifier_of(NS),
+                identifier_of(M),
+                has_annotation(M, ignore) ? "[ignored]" : ""
+            );
+
+            if(!has_annotation(M, ignore)){
+                [:M:]();
+            }
+        }
+    }
+}
+
+#define expect_eq(x, y)  do{if((x) != (y)) std::println("\t -> [ "#x" == "#y" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
+#define expect_ne(x, y)  do{if((x) == (y)) std::println("\t -> [ "#x" != "#y" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
+#define expect_streq(x, y)  do{if(std::strcmp(x, y) != 0) std::println("\t -> [ "#x" == "#y" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
+#define expect_strne(x, y)  do{if(std::strcmp(x, y) == 0) std::println("\t -> [ "#x" != "#y" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
+#define expect_that(statemnt)  do{if(!(statemnt)) std::println("\t -> [ "#statemnt" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
 /////////////////////////////////////////////////////////
 
 auto add(int a, int b) -> int {
@@ -18,35 +41,25 @@ auto add(int a, int b) -> int {
 }
 
 namespace tests {
-    [[=test]]
-    auto test_add() -> void {
-        assert(add(2, 2) == 4);
+
+    void add_random_tests() {
+        expect_eq(add(2, 2), 4);
+        expect_ne(add(2, 2), 5);
+        expect_strne("hh", "hh");
+        expect_that(add(2, 2) == 5);
     }
 
-    [[=test]]
-    auto test_add_hundred() -> void {
-        assert(add(100, 2) == 102);
-        assert(add(2, 100) == 102);
+    void add_hundred() {
+        expect_eq(add(100, 2), 102);
+        expect_eq(add(2, 100), 102);
     }
 
-    [[=test]]
     [[=ignore]]
-    auto ignored_test() -> void {
-        assert(add(0, 0) == 0);
+    void ignored_test() {
+        expect_eq(add(0, 0), 0);
     }
 }
 
 int main() {
-    template for (auto i = 0uz; constexpr info M : define_static_array(members_of(^^tests, access_context::current())))
-    {
-        if constexpr (is_function(M)) {
-            if constexpr (has_annotation(M, ^^decltype(test))){
-                std::println("test #{} : {} {}",
-                    i++,
-                    display_string_of(M),
-                    has_annotation(M, ^^decltype(ignore)) ? "[ignored]" : ""
-                );
-            }
-        }
-    }
+    run_tests<^^tests>();
 }
