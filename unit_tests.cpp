@@ -3,36 +3,57 @@
 #include <meta>
 #include <cstring>
 #include <ranges>
+#include <map>
 
-using namespace std::meta;
-
+namespace meta = std::meta;
 inline constexpr struct{} ignore {};
+namespace tests{}
 
-consteval auto has_annotation(info T, auto anno){
-    return !annotations_of_with_type(T, ^^decltype(anno)).empty();
+consteval auto has_annotation(meta::info T, auto anno) -> bool {
+    return !meta::annotations_of_with_type(T, ^^decltype(anno)).empty();
 }
 
-template<std::meta::info... NSs>
+consteval auto ignored_test(meta::info test) -> bool {
+    return has_annotation(test, ignore);
+}
+
+consteval auto inner_namespaces(meta::info namesp) {
+    return meta::members_of(namesp, meta::access_context::current())
+        | std::views::filter([](std::meta::info i) { return meta::is_namespace(i); })
+        | std::ranges::to<std::vector>();
+}
+
+template<meta::info namesp>
 auto run_tests() -> void {
-    template for (auto nsc = 1uz; constexpr auto ns : {NSs...} ){
-        std::println("[{}] {}:", nsc, identifier_of(ns));
-        template for (auto tstc = 1uz; constexpr auto M : define_static_array(members_of(ns, access_context::current())) ){
-            if constexpr (is_function(M)) {
-                std::println("  [{}.{}] {} {}",
-                    nsc,
-                    tstc,
-                    identifier_of(M),
-                    has_annotation(M, ignore) ? "[ignored]" : ""
+    std::println("+++++++++++++++Unit Tests+++++++++++++++");
+    auto testsuite_count = 1uz;
+    auto testcase_count = 1uz;
+    template for (constexpr auto test_suite : [:meta::reflect_constant_array(inner_namespaces(namesp)):]){
+
+        std::println("{}) {}:", testsuite_count, meta::identifier_of(test_suite));
+
+        template for (constexpr auto test_case : [:meta::reflect_constant_array(meta::members_of(test_suite, meta::access_context::current())):]){
+            if constexpr (meta::is_function(test_case)) {
+                std::println("  {}.{}) {} {}",
+                    testsuite_count,
+                    testcase_count,
+                    meta::identifier_of(test_case),
+                    ignored_test(test_case) ? "[ignored]" : ""
                 );
 
-                if(!has_annotation(M, ignore)){
-                    [:M:]();
+                if constexpr (!ignored_test(test_case)){
+                    [:test_case:]();
                 }
             }
-            tstc++;
+            testcase_count++;
         }
-        nsc++;
+        testsuite_count++;
+        std::println();
     }
+
+    std::println("+++++++++++++++++++++++++++++++++++++++++");
+    std::println("{} test suites", testsuite_count -1 );
+    std::println("{} test cases", testcase_count -1 );
 }
 
 #define expect_eq(x, y)  do{if((x) != (y)) std::println("\t-> [ "#x" == "#y" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
@@ -40,18 +61,25 @@ auto run_tests() -> void {
 #define expect_streq(x, y)  do{if(std::strcmp(x, y) != 0) std::println("\t-> [ "#x" == "#y" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
 #define expect_strne(x, y)  do{if(std::strcmp(x, y) == 0) std::println("\t-> [ "#x" != "#y" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
 #define expect_that(statemnt)  do{if(!(statemnt)) std::println("\t-> [ "#statemnt" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
+
 /////////////////////////////////////////////////////////
 
 auto add(int a, int b) -> int {
     return a + b;
 }
 
-//namespace as testsuite name
-namespace tests {
+auto mul(int a, int b) -> int {
+    return a * b;
+}
+
+//namespace as testsuite
+namespace tests::adding {
 
     void add_random_tests() { // function as test case
         expect_eq(add(2, 2), 4);
         expect_ne(add(2, 2), 5);
+
+        //should fail
         expect_strne("hh", "hh");
         expect_that(add(2, 2) == 5);
     }
@@ -65,16 +93,22 @@ namespace tests {
     void ignored_test() {
         expect_eq(add(0, 0), 0);
     }
+
 }
 
-namespace tests2 {
+namespace tests::multiplication {
 
-    void foo() {
-        expect_eq(add(2, 2), 4);
-        expect_ne(add(2, 2), 5);
+    void mul_number_by_1() {
+        expect_eq(mul(1, 1), 1);
+        expect_eq(add(2, 1), 2);
+
+        //should fail
+        expect_eq(add(2, 1), 0);
+
     }
+
 }
 
 int main() {
-    run_tests<^^tests, ^^tests2>();
+    run_tests<^^tests>();
 }
