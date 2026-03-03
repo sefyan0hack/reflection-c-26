@@ -3,46 +3,64 @@
 #include <meta>
 #include <cstring>
 #include <ranges>
-#include <map>
+#include <thread>
 
-namespace meta = std::meta;
 inline constexpr struct{} ignore {};
+
 namespace tests{}
 
-consteval auto has_annotation(meta::info T, auto anno) -> bool {
-    return !meta::annotations_of_with_type(T, ^^decltype(anno)).empty();
+consteval auto has_annotation(std::meta::info i, std::meta::info anno) -> bool {
+    using namespace std::meta;
+    try {
+        for( auto annotation : annotations_of(i))
+            if(annotation == anno) return true;
+    } catch(...) {}
+    return false;
 }
 
-consteval auto ignored_test(meta::info test) -> bool {
-    return has_annotation(test, ignore);
+consteval auto ignored_test(std::meta::info test) -> bool {
+    return has_annotation(test, ^^decltype(ignore));
 }
 
-consteval auto inner_namespaces(meta::info namesp) {
-    return meta::members_of(namesp, meta::access_context::current())
-        | std::views::filter([](std::meta::info i) { return meta::is_namespace(i); })
+consteval auto inner_namespaces(std::meta::info namesp) {
+    using namespace std::meta;
+    return members_of(namesp, access_context::current())
+        | std::views::filter(is_namespace)
         | std::ranges::to<std::vector>();
 }
 
-template<meta::info namesp>
+template<std::meta::info namesp>
 auto run_tests() -> void {
+    using namespace std::meta;
+
     std::println("+++++++++++++++Unit Tests+++++++++++++++");
     auto testsuite_count = 1uz;
     auto testcase_count = 1uz;
-    template for (constexpr auto test_suite : [:meta::reflect_constant_array(inner_namespaces(namesp)):]){
+    template for (constexpr auto test_suite : [:reflect_constant_array(inner_namespaces(namesp)):]){
 
-        std::println("{}) {}:", testsuite_count, meta::identifier_of(test_suite));
+        std::println("{}) {}:", testsuite_count, identifier_of(test_suite));
 
-        template for (constexpr auto test_case : [:meta::reflect_constant_array(meta::members_of(test_suite, meta::access_context::current())):]){
-            if constexpr (meta::is_function(test_case)) {
-                std::println("  {}.{}) {} {}",
+        template for (constexpr auto test_case : [:reflect_constant_array(members_of(test_suite, access_context::current())):]){
+            if constexpr (is_function(test_case)) {
+                std::print("  {}.{}) {} {}",
                     testsuite_count,
                     testcase_count,
-                    meta::identifier_of(test_case),
+                    identifier_of(test_case),
                     ignored_test(test_case) ? "[ignored]" : ""
                 );
 
                 if constexpr (!ignored_test(test_case)){
-                    [:test_case:]();
+                    bool failed = false;
+                    try {
+                        [:test_case:]();
+                    } catch (const char* e) {
+                        failed = true;
+                        std::println("[failed]");
+                        std::println("{}", e);
+                    } catch (...) {
+                        std::println("thread caught unknown exception");
+                    }
+                    if(!failed) std::println("[passed]");
                 }
             }
             testcase_count++;
@@ -56,13 +74,20 @@ auto run_tests() -> void {
     std::println("{} test cases", testcase_count -1 );
 }
 
-#define expect_eq(x, y)  do{if((x) != (y)) std::println("\t-> [ "#x" == "#y" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
-#define expect_ne(x, y)  do{if((x) == (y)) std::println("\t-> [ "#x" != "#y" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
-#define expect_streq(x, y)  do{if(std::strcmp(x, y) != 0) std::println("\t-> [ "#x" == "#y" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
-#define expect_strne(x, y)  do{if(std::strcmp(x, y) == 0) std::println("\t-> [ "#x" != "#y" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
-#define expect_that(statemnt)  do{if(!(statemnt)) std::println("\t-> [ "#statemnt" ] failed. {}:{}",__FILE__, __LINE__);}while(false);
+// main before the tests cases functions works ?? 
+int main() {
+    run_tests<^^tests>();
+}
 
-/////////////////////////////////////////////////////////
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define expect_eq(x, y) do{if((x) != (y)) throw "\t-> [ "#x" == "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_ne(x, y) do{if((x) == (y)) throw "\t-> [ "#x" != "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_streq(x, y) do{if(std::strcmp(x, y) != 0) throw "\t-> [ "#x" == "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_strne(x, y) do{if(std::strcmp(x, y) == 0) throw "\t-> [ "#x" != "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_that(statemnt) do{if(!(statemnt)) throw "\t-> [ "#statemnt" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 auto add(int a, int b) -> int {
     return a + b;
@@ -72,7 +97,7 @@ auto mul(int a, int b) -> int {
     return a * b;
 }
 
-//namespace as testsuite
+// namespace as testsuite
 namespace tests::adding {
 
     void add_random_tests() { // function as test case
@@ -107,8 +132,4 @@ namespace tests::multiplication {
 
     }
 
-}
-
-int main() {
-    run_tests<^^tests>();
 }
