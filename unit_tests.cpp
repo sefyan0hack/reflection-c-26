@@ -3,7 +3,6 @@
 #include <meta>
 #include <cstring>
 #include <ranges>
-#include <thread>
 
 inline constexpr struct{} ignore {};
 
