@@ -3,22 +3,12 @@
 #include <meta>
 #include <cstring>
 #include <ranges>
+#include <generator>
 
 inline constexpr struct{} ignore {};
 
-namespace tests{}
-
-consteval auto has_annotation(std::meta::info i, std::meta::info anno) -> bool {
-    using namespace std::meta;
-    try {
-        for( auto annotation : annotations_of(i))
-            if(annotation == anno) return true;
-    } catch(...) {}
-    return false;
-}
-
-consteval auto ignored_test(std::meta::info test) -> bool {
-    return has_annotation(test, ^^decltype(ignore));
+namespace tests {
+    using Test = std::generator<const char*>;
 }
 
 consteval auto inner_namespaces(std::meta::info namesp) {
@@ -41,28 +31,22 @@ auto run_tests() -> void {
 
         template for (constexpr auto test_case : [:reflect_constant_array(members_of(test_suite, access_context::current())):]){
             if constexpr (is_function(test_case)) {
-                std::print("  {}.{}) {} {}",
+                std::print("  {}.{}) {}",
                     testsuite_count,
                     testcase_count,
-                    identifier_of(test_case),
-                    ignored_test(test_case) ? "[ignored]" : ""
+                    identifier_of(test_case)
                 );
 
-                if constexpr (!ignored_test(test_case)){
-                    bool failed = false;
-                    try {
-                        [:test_case:]();
-                    } catch (const char* e) {
-                        failed = true;
-                        std::println("[failed]");
-                        std::println("{}", e);
-                    } catch (...) {
-                        std::println("thread caught unknown exception");
-                    }
-                    if(!failed) std::println("[passed]");
+                int failed = 0;
+                for(auto e : [:test_case:]()){
+                    failed++;
+                    if(failed == 1) std::println(" [failed]");
+                    std::println("\t{} {}", failed, e);
                 }
+                if(!failed) std::println(" [passed]");
+
+                testcase_count++;
             }
-            testcase_count++;
         }
         testsuite_count++;
         std::println();
@@ -80,11 +64,18 @@ int main() {
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
-#define expect_eq(x, y) do{if((x) != (y)) throw "\t-> [ "#x" == "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
-#define expect_ne(x, y) do{if((x) == (y)) throw "\t-> [ "#x" != "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
-#define expect_streq(x, y) do{if(std::strcmp(x, y) != 0) throw "\t-> [ "#x" == "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
-#define expect_strne(x, y) do{if(std::strcmp(x, y) == 0) throw "\t-> [ "#x" != "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
-#define expect_that(statemnt) do{if(!(statemnt)) throw "\t-> [ "#statemnt" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_eq(x, y) do{if((x) != (y)) co_yield "-> [ "#x" == "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_ne(x, y) do{if((x) == (y)) co_yield "-> [ "#x" != "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_streq(x, y) do{if(std::strcmp(x, y) != 0) co_yield "-> [ "#x" == "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_strne(x, y) do{if(std::strcmp(x, y) == 0) co_yield "-> [ "#x" != "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_true(statemnt) do{if(!(statemnt)) co_yield "-> [ "#statemnt" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_false(statemnt) do{if((statemnt)) co_yield "-> [ "#statemnt" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_any_throw(statemnt) do{ static bool ____i__ = flase; try { statment } catch(...) { ____i__= true; } \
+                    if(!____i__) co_yield "-> [ `"#statemnt"` not throwing ]  " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_throw(statemnt, type) do{ static bool ____i__ = flase; try { statment } catch(const type e) { ____i__= true; } \
+                    if(!____i__) co_yield "-> [ `"#statemnt"` not throwing a `"#type"` ]  " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_not_any_throw(statemnt) try { statment } catch(...) { co_yield "-> [ `"#statemnt"` is throwing ]  " __FILE__ ":" TOSTRING(__LINE__); }
+#define expect_not_throw(statemnt, type) try { statment } catch(const type e) { co_yield "-> [ `"#statemnt"` is throwing a `"#type"`]  " __FILE__ ":" TOSTRING(__LINE__); }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -97,32 +88,27 @@ auto mul(int a, int b) -> int {
 }
 
 // namespace as testsuite
-namespace tests::adding {
+namespace tests::addition {
 
-    void add_random_tests() { // function as test case
+    Test add_random_tests() { // function as test case
         expect_eq(add(2, 2), 4);
         expect_ne(add(2, 2), 5);
 
         //should fail
         expect_strne("hh", "hh");
-        expect_that(add(2, 2) == 5);
+        expect_true(add(2, 2) == 5);
     }
 
-    void add_hundred() {
+    Test add_hundred() {
         expect_eq(add(100, 2), 102);
         expect_eq(add(2, 100), 102);
-    }
-
-    [[=ignore]]
-    void ignored_test() {
-        expect_eq(add(0, 0), 0);
     }
 
 }
 
 namespace tests::multiplication {
 
-    void mul_number_by_1() {
+    Test mul_number_by_1() {
         expect_eq(mul(1, 1), 1);
         expect_eq(add(2, 1), 2);
 

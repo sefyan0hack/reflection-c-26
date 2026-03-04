@@ -19,7 +19,7 @@ set(EXAMPLES
 foreach(example IN LISTS EXAMPLES)
     add_executable(${example} ${example}.cpp)
     target_link_libraries(${example} PRIVATE stdc++exp)
-    target_compile_options(${example} PRIVATE -freflection)
+    target_compile_options(${example} PRIVATE -freflection -Wno-return-type)
 endforeach()
 
 set(RUN_COMMANDS)
