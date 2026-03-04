@@ -5,7 +5,6 @@
 #include <ranges>
 #include <generator>
 
-
 namespace tests {
     using Test = std::generator<const char*>;
 }
@@ -27,7 +26,7 @@ auto run_tests() -> void {
     constexpr char const* COLOR_RESET  = "\x1b[0m";
     constexpr std::string_view SEP = "========================================";
 
-     std::puts("");
+    std::puts("");
     std::printf("%s%s%s\n", COLOR_BOLD, SEP.data(), COLOR_RESET);
     std::printf("%s  UNIT TESTS (auto-discovered)  %s\n", COLOR_BOLD, COLOR_RESET);
     std::printf("%s%s%s\n\n", COLOR_BOLD, SEP.data(), COLOR_RESET);
@@ -59,14 +58,14 @@ auto run_tests() -> void {
                     if (failed == 1) {
                         std::printf("%s[failed]%s\n", COLOR_RED, COLOR_RESET);
                     }
-                    std::printf("\t%d) %s\n", failed, e);
+                    std::printf("\t%s%d) %s%s\n", COLOR_YELLOW, failed, e, COLOR_RESET);
                 }
 
                 if (!failed) {
                     std::printf("%s[passed]%s\n", COLOR_GREEN, COLOR_RESET);
+                }else {
+                    total_failed++;
                 }
-
-                total_failed += failed;
             }
         }
 
@@ -112,6 +111,7 @@ auto mul(int a, int b) -> int {
     return a * b;
 }
 
+
 // namespace as testsuite
 namespace tests::addition {
 
@@ -141,7 +141,6 @@ namespace tests::multiplication {
         expect_eq(add(2, 1), 0);
 
     }
-
 }
 
 namespace tests::testingframework {
