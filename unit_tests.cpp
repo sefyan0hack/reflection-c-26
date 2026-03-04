@@ -68,15 +68,12 @@ int main() {
 #define expect_ne(x, y) do{if((x) == (y)) co_yield "-> [ "#x" != "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
 #define expect_streq(x, y) do{if(std::strcmp(x, y) != 0) co_yield "-> [ "#x" == "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
 #define expect_strne(x, y) do{if(std::strcmp(x, y) == 0) co_yield "-> [ "#x" != "#y" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
-#define expect_true(statemnt) do{if(!(statemnt)) co_yield "-> [ "#statemnt" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
-#define expect_false(statemnt) do{if((statemnt)) co_yield "-> [ "#statemnt" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
-#define expect_any_throw(statemnt) do{ static bool ____i__ = flase; try { statment } catch(...) { ____i__= true; } \
-                    if(!____i__) co_yield "-> [ `"#statemnt"` not throwing ]  " __FILE__ ":" TOSTRING(__LINE__); } while(false);
-#define expect_throw(statemnt, type) do{ static bool ____i__ = flase; try { statment } catch(const type e) { ____i__= true; } \
-                    if(!____i__) co_yield "-> [ `"#statemnt"` not throwing a `"#type"` ]  " __FILE__ ":" TOSTRING(__LINE__); } while(false);
-#define expect_not_any_throw(statemnt) try { statment } catch(...) { co_yield "-> [ `"#statemnt"` is throwing ]  " __FILE__ ":" TOSTRING(__LINE__); }
-#define expect_not_throw(statemnt, type) try { statment } catch(const type e) { co_yield "-> [ `"#statemnt"` is throwing a `"#type"`]  " __FILE__ ":" TOSTRING(__LINE__); }
-
+#define expect_true(statment) do{if(!(statment)) co_yield "-> [ "#statment" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_false(statment) do{if((statment)) co_yield "-> [ "#statment" ] failed. " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_any_throw(statment) do{ static bool ____i__ = false; try { statment } catch(...) { ____i__= true; } \
+                    if(!____i__) co_yield "-> [ `"#statment"` not throwing ]  " __FILE__ ":" TOSTRING(__LINE__); } while(false);
+#define expect_throw(statment, type) do{ static bool ____i__ = false; try { statment } catch(const type e) { ____i__= true; } \
+                    if(!____i__) co_yield "-> [ `"#statment"` not throwing a `"#type"` ]  " __FILE__ ":" TOSTRING(__LINE__); } while(false);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 auto add(int a, int b) -> int {
@@ -115,6 +112,74 @@ namespace tests::multiplication {
         //should fail
         expect_eq(add(2, 1), 0);
 
+    }
+
+}
+
+namespace tests::testingframework {
+
+    Test expect_eq_pass() {
+        expect_eq(1, 1);
+    }
+
+    Test expect_eq_fail() {
+        expect_eq(1, 0);
+    }
+
+    Test expect_ne_pass() {
+        expect_ne(1, 0);
+    }
+
+    Test expect_ne_fail() {
+        expect_ne(1, 1);
+    }
+
+    Test expect_streq_pass() {
+        expect_streq("hello", "hello");
+    }
+
+    Test expect_streq_fail() {
+        expect_streq("hello", "bey");
+    }
+
+    Test expect_strne_pass() {
+        expect_strne("hello", "bey");
+    }
+
+    Test expect_strne_fail() {
+        expect_strne("hello", "hello");
+    }
+
+    Test expect_true_pass() {
+        expect_true(1 == 1);
+    }
+
+    Test expect_true_fail() {
+        expect_true(1 != 1);
+    }
+
+    Test expect_false_pass() {
+        expect_false(1 != 1);
+    }
+
+    Test expect_false_fail() {
+        expect_false(1 == 1);
+    }
+
+    Test expect_any_throw_pass() {
+        expect_any_throw( { throw 1; } );
+    }
+
+    Test expect_any_throw_fail() {
+        expect_any_throw( {int a = 0;} );
+    }
+
+    Test expect_throw_pass() {
+        expect_throw( { throw 1; }, int );
+    }
+
+    Test expect_throw_fail() {
+        expect_throw( {int a = 0;}, int );
     }
 
 }
