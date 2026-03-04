@@ -1,11 +1,10 @@
 // g++ -std=c++26 -freflection
-#include <print>
+#include <cstdio>
 #include <meta>
 #include <cstring>
 #include <ranges>
 #include <generator>
 
-inline constexpr struct{} ignore {};
 
 namespace tests {
     using Test = std::generator<const char*>;
@@ -22,39 +21,40 @@ template<std::meta::info namesp>
 auto run_tests() -> void {
     using namespace std::meta;
 
-    std::println("+++++++++++++++Unit Tests+++++++++++++++");
+    std::puts("+++++++++++++++Unit Tests+++++++++++++++");
     auto testsuite_count = 1uz;
     auto testcase_count = 1uz;
     template for (constexpr auto test_suite : [:reflect_constant_array(inner_namespaces(namesp)):]){
-
-        std::println("{}) {}:", testsuite_count, identifier_of(test_suite));
+        auto suite_id = identifier_of(test_suite);
+        std::printf("%d) %.*s:\n", testsuite_count, static_cast<int>(suite_id.length()), suite_id.data());
 
         template for (constexpr auto test_case : [:reflect_constant_array(members_of(test_suite, access_context::current())):]){
+            auto case_id = identifier_of(test_case);
             if constexpr (is_function(test_case)) {
-                std::print("  {}.{}) {}",
+                std::printf("  %d.%d)  %.*s",
                     testsuite_count,
                     testcase_count,
-                    identifier_of(test_case)
+                    static_cast<int>(case_id.length()), case_id.data()
                 );
 
                 int failed = 0;
                 for(auto e : [:test_case:]()){
                     failed++;
-                    if(failed == 1) std::println(" [failed]");
-                    std::println("\t{} {}", failed, e);
+                    if(failed == 1) std::puts(" [failed]");
+                    std::printf("\t%d %s\n", failed, e);
                 }
-                if(!failed) std::println(" [passed]");
+                if(!failed) std::puts(" [passed]");
 
                 testcase_count++;
             }
         }
         testsuite_count++;
-        std::println();
+        std::puts("\n");
     }
 
-    std::println("+++++++++++++++++++++++++++++++++++++++++");
-    std::println("{} test suites", testsuite_count -1 );
-    std::println("{} test cases", testcase_count -1 );
+    std::puts("+++++++++++++++++++++++++++++++++++++++++");
+    std::printf("%d test suites\n", testsuite_count -1 );
+    std::printf("%d test cases\n", testcase_count -1 );
 }
 
 // main before the tests cases functions works ?? 
