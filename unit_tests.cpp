@@ -20,41 +20,69 @@ consteval auto inner_namespaces(std::meta::info namesp) {
 template<std::meta::info namesp>
 auto run_tests() -> void {
     using namespace std::meta;
+    constexpr char const* COLOR_RED    = "\x1b[31m";
+    constexpr char const* COLOR_GREEN  = "\x1b[32m";
+    constexpr char const* COLOR_YELLOW = "\x1b[33m";
+    constexpr char const* COLOR_BOLD   = "\x1b[1m";
+    constexpr char const* COLOR_RESET  = "\x1b[0m";
+    constexpr std::string_view SEP = "========================================";
 
-    std::puts("+++++++++++++++Unit Tests+++++++++++++++");
-    auto testsuite_count = 1uz;
-    auto testcase_count = 1uz;
-    template for (constexpr auto test_suite : [:reflect_constant_array(inner_namespaces(namesp)):]){
-        auto suite_id = identifier_of(test_suite);
-        std::printf("%d) %.*s:\n", testsuite_count, static_cast<int>(suite_id.length()), suite_id.data());
+     std::puts("");
+    std::printf("%s%s%s\n", COLOR_BOLD, SEP.data(), COLOR_RESET);
+    std::printf("%s  UNIT TESTS (auto-discovered)  %s\n", COLOR_BOLD, COLOR_RESET);
+    std::printf("%s%s%s\n\n", COLOR_BOLD, SEP.data(), COLOR_RESET);
 
-        template for (constexpr auto test_case : [:reflect_constant_array(members_of(test_suite, access_context::current())):]){
-            auto case_id = identifier_of(test_case);
+    std::size_t total_suites = 0;
+    std::size_t total_cases  = 0;
+    std::size_t total_failed = 0;
+    template for (constexpr auto test_suite : [:reflect_constant_array(inner_namespaces(namesp)):]) {
+        constexpr auto suite_id = identifier_of(test_suite);
+        total_suites++;
+        std::printf("%s%zu) %.*s%s\n",
+                    COLOR_BOLD,
+                    total_suites,
+                    static_cast<int>(suite_id.length()), suite_id.data(),
+                    COLOR_RESET);
+
+        template for (constexpr auto test_case : [:reflect_constant_array(members_of(test_suite, access_context::current())):]) {
+            constexpr auto case_id = identifier_of(test_case);
             if constexpr (is_function(test_case)) {
-                std::printf("  %d.%d)  %.*s",
-                    testsuite_count,
-                    testcase_count,
-                    static_cast<int>(case_id.length()), case_id.data()
-                );
+                total_cases++;
+                std::printf("  %zu.%zu) %.*s ... ",
+                            total_suites,
+                            total_cases,
+                            static_cast<int>(case_id.length()), case_id.data());
 
-                int failed = 0;
-                for(auto e : [:test_case:]()){
+                std::size_t failed = 0;
+                for (auto e : [:test_case:]()) {
                     failed++;
-                    if(failed == 1) std::puts(" [failed]");
-                    std::printf("\t%d %s\n", failed, e);
+                    if (failed == 1) {
+                        std::printf("%s[failed]%s\n", COLOR_RED, COLOR_RESET);
+                    }
+                    std::printf("\t%d) %s\n", failed, e);
                 }
-                if(!failed) std::puts(" [passed]");
 
-                testcase_count++;
+                if (!failed) {
+                    std::printf("%s[passed]%s\n", COLOR_GREEN, COLOR_RESET);
+                }
+
+                total_failed += failed;
             }
         }
-        testsuite_count++;
-        std::puts("\n");
+
+        std::puts("");
     }
 
-    std::puts("+++++++++++++++++++++++++++++++++++++++++");
-    std::printf("%d test suites\n", testsuite_count -1 );
-    std::printf("%d test cases\n", testcase_count -1 );
+    // Summary footer
+    std::printf("%s%s%s\n", COLOR_BOLD, SEP.data(), COLOR_RESET);
+    const char* fail_color = total_failed ? COLOR_RED : COLOR_GREEN;
+    std::printf("Suites: %zu   Cases: %zu   %sFailures: %zu%s\n",
+                total_suites,
+                total_cases,
+                fail_color,
+                total_failed,
+                COLOR_RESET);
+    std::printf("%s%s%s\n", COLOR_BOLD, SEP.data(), COLOR_RESET);
 }
 
 // main before the tests cases functions works ?? 
