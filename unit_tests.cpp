@@ -24,6 +24,7 @@ namespace testing_framework {
             | std::views::filter(is_namespace)
             | std::ranges::to<std::vector>();
     }
+    consteval auto is_test_case(std::meta::info t) -> bool { return is_function(t) && std::meta::return_type_of(t) == ^^tests::Test; }
 
     template<std::meta::info namesp = ^^::tests>
     auto print_tests() -> void {
@@ -32,7 +33,7 @@ namespace testing_framework {
         template for (constexpr auto test_suite : [:reflect_constant_array(inner_namespaces(namesp)):]) {
             constexpr auto suite_id = identifier_of(test_suite);
             template for (constexpr auto test_case : [:reflect_constant_array(members_of(test_suite, ctx)):]) {
-                if constexpr (is_function(test_case)) {
+                if constexpr (is_test_case(test_case)) {
                     constexpr auto case_id = identifier_of(test_case);
                     std::printf("%.*s.%.*s\n",
                         static_cast<int>(suite_id.length()), suite_id.data(),
@@ -43,7 +44,7 @@ namespace testing_framework {
         }
     }
 
-    template<std::meta::info testcase> requires (is_function(testcase))
+    template<std::meta::info testcase> requires (is_test_case(testcase))
     auto run() -> bool {
         using namespace std::meta;
         constexpr auto case_id = identifier_of(testcase);
@@ -83,7 +84,7 @@ namespace testing_framework {
         template for (constexpr auto test_suite : [:reflect_constant_array(inner_namespaces(namesp)):]) {
             constexpr auto suite_id = identifier_of(test_suite);
             template for (constexpr auto test_case : [:reflect_constant_array(members_of(test_suite, ctx)):]) {
-                if constexpr (is_function(test_case)){
+                if constexpr (is_test_case(test_case)){
                     constexpr auto case_id = identifier_of(test_case);
                     if (suite_id == tsuite && case_id == tcase) {
                         return run<test_case>();
@@ -107,7 +108,7 @@ namespace testing_framework {
             constexpr auto suite_id = identifier_of(test_suite);
             if (suite_id == suite) {
                 template for (constexpr auto test_case : [:reflect_constant_array(members_of(test_suite, ctx)):]) {
-                    if constexpr (is_function(test_case)){
+                    if constexpr (is_test_case(test_case)){
                         if(!run<test_case>()) failed++;
                     }
                 }
@@ -148,7 +149,7 @@ namespace testing_framework {
 
             template for (constexpr auto test_case : [:reflect_constant_array(members_of(test_suite, ctx)):]) {
                 constexpr auto case_id = identifier_of(test_case);
-                if constexpr (is_function(test_case)) {
+                if constexpr (is_test_case(test_case)) {
                     total_cases++;
                     std::printf("  %zu.%zu) ", total_suites, total_cases);
                     if(!run<test_case>()) total_failed++;
