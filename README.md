@@ -17,7 +17,7 @@ This repository demonstrates powerful compile-time reflection features from the 
 - Compile with:
 
 ---
-# ⚙️ Unit Tests FrameWork using c++26 reflection
+# Unit Tests FrameWork using c++26 reflection
 
 <p align="center">
   <img src="unittests.png" width="100%" alt="View">
