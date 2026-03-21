@@ -14,6 +14,8 @@ set(EXAMPLES
     universal_formatter
     enum_tostring
     unit_tests
+    Function
+    cli_parse
 )
 
 foreach(example IN LISTS EXAMPLES)
