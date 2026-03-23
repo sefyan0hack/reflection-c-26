@@ -10,11 +10,22 @@ using namespace std::meta;
 template <class Opts>
 auto parse(int argc, char** argv) -> Opts {
   std::vector<std::string_view> cmdline(argv+1, argv+argc);
+  constexpr auto ctx = std::meta::access_context::current();
+
+  constexpr auto help = [](char** argv){
+    std::cout << "Usage: " << argv[0] << " [options]" << std::endl;
+
+    std::cout << "options:" << std::endl;
+    template for (constexpr auto opt : std::define_static_array(nonstatic_data_members_of(^^Opts, ctx))) {
+      std::cout << "  --" << identifier_of(opt) << std::endl;
+    }
+  };
+
+  if(cmdline.empty()) help(argv);
 
   Opts opts;
 
-  constexpr auto ctx = std::meta::access_context::current();
-  template for (constexpr auto opt: std::define_static_array(nonstatic_data_members_of(^^Opts, ctx))) {
+  template for (constexpr auto opt : std::define_static_array(nonstatic_data_members_of(^^Opts, ctx))) {
 
     auto it = std::ranges::find_if(cmdline,
       [=](std::string_view arg){
