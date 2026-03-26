@@ -8,77 +8,13 @@
 
 using namespace std::meta;
 
-template <typename Char> struct basic_constant_string
-{
-  using value_type = std::basic_string_view<Char>;
-
-  const Char* data_;
-  std::size_t size_;
-
-  template <auto N> constexpr basic_constant_string(const Char (&str)[N])
-  {
-    const auto ss = std::basic_string_view<Char>(define_static_string(std::basic_string_view<Char>(str, N - 1)));
-    data_ = ss.data();
-    size_ = ss.size();
-  }
-
-  constexpr basic_constant_string(std::basic_string_view<Char> str)
-  {
-    const auto ss = std::basic_string_view<Char>(define_static_string(str));
-    data_         = ss.data();
-    size_         = ss.size();
-  }
-
-  constexpr basic_constant_string(std::basic_string<Char> str)
-  {
-    const auto ss =
-        std::basic_string_view<Char>(define_static_string(std::basic_string_view<Char>(str)));
-    data_ = ss.data();
-    size_ = ss.size();
-  }
-
-  constexpr value_type view() const noexcept
-  {
-    return value_type(data_, size_);
-  }
-
-  constexpr auto data() const noexcept
-  {
-    return data_;
-  }
-
-  constexpr auto size() const noexcept
-  {
-    return size_;
-  }
-
-  constexpr operator value_type() const noexcept
-  {
-    return view();
-  }
-
-  constexpr value_type operator*() const noexcept
-  {
-    return view();
-  }
-
-  constexpr bool operator==(basic_constant_string const& other) const noexcept
-  {
-    return view() == other.view();
-  }
-  constexpr auto operator<=>(basic_constant_string const& other) const noexcept
-  {
-    return view() <=> other.view();
-  }
+struct help_m {
+  char const* msg;
 };
 
-using constant_string = basic_constant_string<char>;
-
-consteval auto operator""_sc(const char* data, std::size_t s) -> constant_string
+consteval auto help(std::string_view m) -> help_m
 {
-  return {
-    std::string_view{data, s}
-  };
+  return help_m { std::define_static_string(m) };
 }
 
 template <class Opts>
@@ -110,8 +46,8 @@ auto print_help(char** argv) -> void
     std::cout << std::string(padding, ' ');
 
     bool first = true;
-    template for (constexpr auto annot : std::define_static_array(annotations_of_with_type(opt, ^^constant_string))) {
-      std::string_view desc = extract<constant_string>(annot).view();
+    template for (constexpr auto annot : std::define_static_array(annotations_of_with_type(opt, ^^help_m))) {
+      std::string_view desc = extract<help_m>(annot).msg;
       if (first) {
         std::cout << desc << '\n';
         first = false;
@@ -165,11 +101,11 @@ auto cli_parse(int argc, char** argv, bool empty_opts_call_help = false) -> Opts
 }
 
 struct Options {
-  [[="name of ..."_sc]]
+  [[=help("name of ...")]]
   std::string name;
 
-  [[="count of ..."_sc]]
-  [[="line 2 ..."_sc]]
+  [[=help("count of ...")]]
+  [[=help("line 2 ...")]]
   int count = 1;
 };
 
