@@ -42,8 +42,8 @@ auto print_help(char** argv) -> void
     std::cout << std::string(padding, ' ');
 
     bool first = true;
-    template for (constexpr auto annot : std::define_static_array(annotations_of_with_type(opt, ^^help_m))) {
-      std::string_view desc = extract<help_m>(annot).msg;
+    template for (constexpr auto annot : std::define_static_array(annotations_of_with_type(opt, ^^help))) {
+      std::string_view desc = extract<help>(annot).msg;
       if (first) {
         std::cout << desc << '\n';
         first = false;
