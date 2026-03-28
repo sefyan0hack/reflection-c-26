@@ -8,14 +8,10 @@
 
 using namespace std::meta;
 
-struct help_m {
+struct help {
   char const* msg;
+  template<std::size_t N> consteval help(const char (&m)[N]) : msg(std::define_static_string(m)) {}
 };
-
-consteval auto help(std::string_view m) -> help_m
-{
-  return help_m { std::define_static_string(m) };
-}
 
 template <class Opts>
 auto print_help(char** argv) -> void
